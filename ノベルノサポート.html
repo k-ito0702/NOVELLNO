@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>NOVELLNO ケアコンシェルジュ</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3461/3461285.png">
+    <meta name="theme-color" content="#171717">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 10px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        button:active { transform: scale(0.96); transition: 0.1s; }
+        body { overscroll-behavior-y: contain; -webkit-tap-highlight-color: transparent; background-color: #f5f5f5; font-family: -apple-system, sans-serif; }
+        #loading { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: white; z-index: 1000; font-weight: bold; color: #666; }
+    </style>
+</head>
+<body>
+    <div id="loading">NOVELLNO 起動中...</div>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // アイコン描画
+        const Icon = ({ name, size = 24, className = "" }) => {
+            const icons = {
+                home: <React.Fragment><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></React.Fragment>,
+                beaker: <React.Fragment><path d="M4.5 3h15"/><path d="M6 3v16a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V3"/><path d="M6 14h12"/><path d="M10 3v5"/><path d="M14 3v5"/><path d="M8 8h8"/></React.Fragment>,
+                sparkles: <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>,
+                droplets: <React.Fragment><path d="m7 16.3c2.2 0 4-1.8 4-4 0-3.3-4-6.3-4-6.3s-4 3-4 6.3c0 2.2 1.8 4 4 4Z"/><path d="m17 18.3c1.7 0 3-1.3 3-3 0-2.5-3-4.8-3-4.8s-3 2.3-3 4.8c0 1.7 1.3 3 3 3Z"/></React.Fragment>,
+                check: <polyline points="20 6 9 17 4 12"/>,
+                refresh: <React.Fragment><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></React.Fragment>,
+                book: <React.Fragment><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></React.Fragment>,
+                calc: <React.Fragment><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/></React.Fragment>
+            };
+            return (
+                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                    {icons[name] || null}
+                </svg>
+            );
+        };
+
+        const App = () => {
+            const [mode, setMode] = useState('menu');
+            const [step, setStep] = useState('intro');
+            const [salonTab, setSalonTab] = useState('steps');
+            const [length, setLength] = useState('M');
+            const [answers, setAnswers] = useState({ damage: null, texture: null, outbath: null });
+
+            useEffect(() => {
+                const loader = document.getElementById('loading');
+                if (loader) loader.style.display = 'none';
+            }, []);
+
+            const products = {
+                shampoo: {
+                    SI: { name: 'SI (シルク)', desc: '表面補修。ローダメージでサラサラな髪へ。', color: 'bg-green-50 border-green-200 text-green-700' },
+                    CO: { name: 'CO (コラーゲン)', desc: '保湿。ミドルダメージで潤いとまとまり。', color: 'bg-orange-50 border-orange-200 text-orange-700' },
+                    KE: { name: 'KE (ケラチン)', desc: '内部補修。ハイダメージでしなやかな弾力。', color: 'bg-blue-50 border-blue-200 text-blue-700' },
+                },
+                treatment: {
+                    SM: { name: 'SM (スムース)', desc: '軽い。サラサラな仕上がりに。', color: 'bg-amber-50 border-amber-200 text-amber-700' },
+                    SL: { name: 'SL (スリーク)', desc: 'しなやか。落ち着きのあるまとまり。', color: 'bg-stone-50 border-stone-200 text-stone-700' },
+                    MO: { name: 'MO (モイスト)', desc: 'なめらか。潤いあふれる仕上がりに。', color: 'bg-slate-50 border-slate-200 text-slate-700' },
+                },
+                outbath: {
+                    BE: { name: 'ブーストエマルジョン', desc: 'ドライヤーの熱から守り、髪の密度を高める。', color: 'bg-rose-50 border-rose-200 text-rose-700' },
+                    PO: { name: 'プロテクションオイル', desc: '熱から守り、ツヤと指通りをアップ。', color: 'bg-yellow-50 border-yellow-200 text-yellow-700' },
+                }
+            };
+
+            const salonSteps = [
+                { t: 'シャンプー (ベースを整える)', d: '洗髪後、髪全体をやさしくコーミング。洗い流した後、軽く水気を取る。' },
+                { t: '1stエマルジョン (CMC脂質補給)', d: '毛先を中心に全頭に塗布。その後、しっかり揉み込み〜優しくコーミング。' },
+                { t: '2ndローション (タンパク補給)', d: '毛先から根元に向かって塗布。その後、揉み込み〜優しくコーミング。' },
+                { t: '加温機 (定着促進)', d: '3分程度加温し、タンパク質の定着を促進させる。' },
+                { t: '3rdクリーム (結合強化)', d: '毛先から根元に向かって塗布。その後、しっかり揉み込み〜優しくコーミング。' },
+                { t: '超音波アイロン等 (浸透促進)', d: 'アイロンを使用し、成分の浸透を促進させる。' },
+                { t: 'チェンジリンス (成分定着)', d: 'ぬるま湯でやさしく揉み込み乳化。髪表面がなめらかに変化したら完了。' },
+                { t: '4thクリーム (バリア機能修復)', d: '水気を取り、毛先を中心に全頭塗布。揉み込み〜コーミング後、水洗。' },
+                { t: '5thエマルジョン (キューティクル補修)', d: '毛先を中心に全頭に塗布。揉み込み〜優しくコーミング。' },
+                { t: '形状安定・固定', d: 'ドライ後しっかりとブロー。その後アイロン(推奨120℃)で形状・質感を固定。' },
+                { t: 'お仕上げ (表面保護)', d: 'プロテクションオイルを毛先〜中心に塗布。コーミングで馴染ませる。' }
+            ];
+
+            const dosage = {
+                S: { s: '3mL', e1: '12g', l2: '10mL', c3: '9g', c4: '9g', e5: '0.5g' },
+                M: { s: '6mL', e1: '18g', l2: '15mL', c3: '12g', c4: '12g', e5: '1g' },
+                L: { s: '9mL', e1: '24g', l2: '20mL', c3: '18g', c4: '15g', e5: '2g' }
+            };
+
+            const selectAnswer = (key, val) => {
+                const newAnswers = { ...answers, [key]: val };
+                setAnswers(newAnswers);
+                if (key === 'damage') setStep('q2');
+                else if (key === 'texture') setStep('q3');
+                else setStep('result');
+            };
+
+            const getRecItems = () => {
+                const sh = products.shampoo[answers.damage] || products.shampoo.SI;
+                const tr = products.treatment[answers.texture] || products.treatment.SM;
+                const items = [
+                    { label: 'Shampoo', ...sh },
+                    { label: 'Treatment', ...tr }
+                ];
+                if (answers.damage === 'KE') {
+                    if (answers.outbath === 'BE') {
+                        items.push({ label: 'Outbath', ...products.outbath['BE'] });
+                    } else {
+                        items.push({ label: 'Outbath (1)', ...products.outbath['BE'] });
+                        items.push({ label: 'Outbath (2)', ...products.outbath['PO'] });
+                    }
+                } else if (answers.outbath) {
+                    items.push({ label: 'Outbath', ...products.outbath[answers.outbath] });
+                }
+                return items;
+            };
+
+            return (
+                <div className="h-screen w-full flex items-center justify-center p-2">
+                    <div className="max-w-md w-full bg-white shadow-2xl rounded-[2.5rem] overflow-hidden h-full max-h-[850px] flex flex-col border-[6px] border-neutral-900 relative">
+                        
+                        <header className="bg-neutral-900 text-white p-6 pb-8 text-center relative shrink-0 pt-10">
+                            {mode !== 'menu' && (
+                                <button onClick={() => {setMode('menu'); setStep('intro')}} className="absolute left-6 top-10 text-white/50 flex items-center gap-1 text-sm active:text-white">
+                                    <Icon name="home" size={16} /> 戻る
+                                </button>
+                            )}
+                            <h1 className="text-xl font-black tracking-widest uppercase">NOVELLNO</h1>
+                            <p className="text-[10px] text-neutral-400 mt-1 tracking-[0.2em]">RE-SHAPE SYSTEM</p>
+                        </header>
+
+                        <main className="flex-1 p-6 flex flex-col -mt-4 bg-white rounded-t-[2rem] overflow-y-auto custom-scrollbar">
+                            {mode === 'menu' && (
+                                <div className="flex-1 flex flex-col justify-center gap-4 animate-fade-in">
+                                    <div className="text-center mb-6">
+                                        <div className="inline-block p-4 bg-neutral-100 rounded-full mb-4 text-neutral-400">
+                                            <Icon name="sparkles" size={32} />
+                                        </div>
+                                        <h2 className="text-2xl font-bold italic text-neutral-800">Concierge Menu</h2>
+                                    </div>
+                                    <button onClick={() => {setMode('home'); setStep('intro')}} className="p-6 bg-white border-2 border-neutral-100 rounded-3xl flex items-center justify-between shadow-sm active:border-neutral-900 transition-all">
+                                        <div className="text-left"><div className="text-lg font-bold">ホームケア診断</div><div className="text-xs text-neutral-500">最適な商品を提案</div></div>
+                                        <div className="p-3 bg-neutral-50 rounded-2xl"><Icon name="home" /></div>
+                                    </button>
+                                    <button onClick={() => {setMode('salon'); setSalonTab('steps')}} className="p-6 bg-white border-2 border-neutral-100 rounded-3xl flex items-center justify-between shadow-sm active:border-neutral-900 transition-all">
+                                        <div className="text-left"><div className="text-lg font-bold">サロンケアガイド</div><div className="text-xs text-neutral-500">施術工程と使用量</div></div>
+                                        <div className="p-3 bg-neutral-50 rounded-2xl"><Icon name="beaker" /></div>
+                                    </button>
+                                </div>
+                            )}
+
+                            {mode === 'home' && (
+                                <div className="flex-1 flex flex-col h-full animate-fade-in">
+                                    {step === 'intro' ? (
+                                        <div className="flex-1 flex flex-col justify-center items-center text-center space-y-6 h-full">
+                                            <Icon name="droplets" size={48} className="text-neutral-300" />
+                                            <h2 className="text-2xl font-bold text-neutral-800 leading-tight">あなたにぴったりの<br/>ヘアケアを診断</h2>
+                                            <button onClick={() => setStep('q1')} className="w-full py-4 bg-neutral-900 text-white rounded-2xl font-bold shadow-lg">診断をはじめる</button>
+                                        </div>
+                                    ) : step === 'result' ? (
+                                        <div className="space-y-4 pb-10 animate-fade-in">
+                                            <div className="text-center"><Icon name="check" size={48} className="text-green-500 mx-auto" /><h2 className="text-2xl font-bold">診断結果</h2></div>
+                                            {getRecItems().map((item, i) => (
+                                                <div key={i} className={`p-4 border-l-4 rounded-r-xl ${item.color} shadow-sm animate-fade-in`}>
+                                                    <div className="text-[10px] font-bold opacity-50 mb-1 uppercase tracking-tighter">{item.label}</div>
+                                                    <div className="text-lg font-bold">{item.name}</div>
+                                                    <p className="text-xs mt-1 leading-relaxed">{item.desc}</p>
+                                                </div>
+                                            ))}
+                                            <button onClick={() => setStep('intro')} className="w-full py-4 border-2 border-neutral-100 rounded-2xl text-neutral-400 font-bold flex items-center justify-center gap-2 mt-4 active:bg-neutral-50"><Icon name="refresh" size={16}/> 最初からやり直す</button>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-6">
+                                            <h2 className="text-xl font-bold">{step==='q1'?'今のダメージ状態は？':step==='q2'?'理想の質感は？':'重視したいポイントは？'}</h2>
+                                            <div className="grid gap-3">
+                                                {step === 'q1' && [
+                                                    { id: 'SI', l: 'ローダメージ' },
+                                                    { id: 'CO', l: 'ミドルダメージ' },
+                                                    { id: 'KE', l: 'ハイダメージ' }
+                                                ].map(o => (
+                                                    <button key={o.id} onClick={() => selectAnswer('damage', o.id)} className="p-5 border-2 border-neutral-100 rounded-2xl bg-white text-left font-bold shadow-sm active:border-neutral-900 transition-all">{o.l}</button>
+                                                ))}
+
+                                                {step === 'q2' && [
+                                                    { id: 'SM', l: '軽やかでサラサラな髪' },
+                                                    { id: 'SL', l: 'しなやかでまとまりのある髪' },
+                                                    { id: 'MO', l: 'なめらかで潤いのある髪' }
+                                                ].map(o => (
+                                                    <button key={o.id} onClick={() => selectAnswer('texture', o.id)} className="p-5 border-2 border-neutral-100 rounded-2xl bg-white text-left font-bold shadow-sm active:border-neutral-900 transition-all">{o.l}</button>
+                                                ))}
+
+                                                {step === 'q3' && [
+                                                    { id: 'BE', l: '密度・しなやかさ' },
+                                                    { id: 'PO', l: 'ツヤ・指通り' }
+                                                ].map(o => (
+                                                    <button key={o.id} onClick={() => selectAnswer('outbath', o.id)} className="p-5 border-2 border-neutral-100 rounded-2xl bg-white text-left font-bold shadow-sm active:border-neutral-900 transition-all">{o.l}</button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {mode === 'salon' && (
+                                <div className="flex-1 flex flex-col h-full animate-fade-in">
+                                    <div className="flex bg-neutral-100 p-1 rounded-2xl mb-6 shrink-0">
+                                        <button onClick={() => setSalonTab('steps')} className={`flex-1 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 ${salonTab==='steps'?'bg-white shadow-sm':'text-neutral-400'}`}><Icon name="book" size={16}/> 工程</button>
+                                        <button onClick={() => setSalonTab('dosage')} className={`flex-1 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 ${salonTab==='dosage'?'bg-white shadow-sm':'text-neutral-400'}`}><Icon name="calc" size={16}/> 使用量</button>
+                                    </div>
+                                    {salonTab === 'steps' ? (
+                                        <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar pb-10">
+                                            {salonSteps.map((s, i) => (
+                                                <div key={i} className="flex gap-4 animate-fade-in">
+                                                    <div className="flex flex-col items-center shrink-0">
+                                                        <div className="w-8 h-8 rounded-full bg-neutral-900 text-white text-[10px] flex items-center justify-center font-bold shrink-0">{i+1}</div>
+                                                        {i < salonSteps.length - 1 && <div className="w-px h-full bg-neutral-100 my-1"></div>}
+                                                    </div>
+                                                    <div className="text-left pb-4">
+                                                        <div className="font-bold text-sm text-neutral-800 leading-tight">{s.t}</div>
+                                                        <div className="text-[11px] text-neutral-500 mt-1 leading-relaxed">{s.d}</div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-6 animate-fade-in">
+                                            <div className="flex justify-between items-center px-2"><h3 className="font-bold text-sm text-neutral-800">長さ選択</h3><div className="flex bg-neutral-100 p-1 rounded-xl">{['S','M','L'].map(l => <button key={l} onClick={()=>setLength(l)} className={`w-10 h-10 rounded-lg text-xs font-bold transition-all ${length===l?'bg-neutral-900 text-white shadow-lg':'text-neutral-400'}`}>{l}</button>)}</div></div>
+                                            <div className="bg-neutral-900 rounded-3xl p-6 text-white space-y-4 shadow-xl">
+                                                {Object.entries({
+                                                    'シャンプー': dosage[length].s, 
+                                                    '1stエマルジョン': dosage[length].e1, 
+                                                    '2ndローション': dosage[length].l2, 
+                                                    '3rdクリーム': dosage[length].c3, 
+                                                    '4thクリーム': dosage[length].c4, 
+                                                    '5thエマルジョン': dosage[length].e5
+                                                }).map(([k,v], i) => (
+                                                    <div key={i} className="flex justify-between items-center border-b border-white/10 pb-2"><span className="text-[10px] opacity-50 uppercase font-bold">{k}</span><span className="font-bold text-yellow-400 text-lg">{v}</span></div>
+                                                ))}
+                                            </div>
+                                            <p className="text-[10px] text-neutral-400 text-center leading-relaxed italic">※目安量です。髪の状態に合わせて調整してください。</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </main>
+                        <footer className="p-4 bg-neutral-50 text-[10px] text-center text-neutral-400 shrink-0 italic font-medium tracking-widest uppercase">Supported by MIAN NOVELLNO</footer>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
