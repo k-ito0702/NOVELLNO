@@ -96,10 +96,35 @@
                 { t: 'お仕上げ (表面保護)', d: 'プロテクションオイルを毛先〜中心に塗布。コーミングで馴染ませる。' }
             ];
 
+            // パンフレットに基づいた詳細な使用量データ
             const dosage = {
-                S: { s: '3mL', e1: '12g', l2: '10mL', c3: '9g', c4: '9g', e5: '0.5g' },
-                M: { s: '6mL', e1: '18g', l2: '15mL', c3: '12g', c4: '12g', e5: '1g' },
-                L: { s: '9mL', e1: '24g', l2: '20mL', c3: '18g', c4: '15g', e5: '2g' }
+                S: { 
+                    s: '3mL (1プッシュ)', 
+                    e1: '12g (4プッシュ)', 
+                    l2: '10mL', 
+                    c3: { b: '9g (3プッシュ)', h: '12g (4プッシュ)' }, 
+                    c4: { b: '9g (3プッシュ)', h: '12g (4プッシュ)' }, 
+                    e5: '1~1.5g (0.5プッシュ)',
+                    oil: '0.2mL (1プッシュ)'
+                },
+                M: { 
+                    s: '6mL (2プッシュ)', 
+                    e1: '18g (6プッシュ)', 
+                    l2: '15mL', 
+                    c3: { b: '12g (4プッシュ)', h: '18g (6プッシュ)' }, 
+                    c4: { b: '12g (4プッシュ)', h: '18g (6プッシュ)' }, 
+                    e5: '1~1.5g (0.5プッシュ)',
+                    oil: '0.2~0.4mL (1~2プッシュ)'
+                },
+                L: { 
+                    s: '9mL (3プッシュ)', 
+                    e1: '24g (8プッシュ)', 
+                    l2: '20mL', 
+                    c3: { b: '15g (5プッシュ)', h: '24g (8プッシュ)' }, 
+                    c4: { b: '15g (5プッシュ)', h: '24g (8プッシュ)' }, 
+                    e5: '3g (1プッシュ)',
+                    oil: '0.4mL (2プッシュ)'
+                }
             };
 
             const selectAnswer = (key, val) => {
@@ -239,18 +264,63 @@
                                         </div>
                                     ) : (
                                         <div className="space-y-6 animate-fade-in">
-                                            <div className="flex justify-between items-center px-2"><h3 className="font-bold text-sm text-neutral-800">長さ選択</h3><div className="flex bg-neutral-100 p-1 rounded-xl">{['S','M','L'].map(l => <button key={l} onClick={()=>setLength(l)} className={`w-10 h-10 rounded-lg text-xs font-bold transition-all ${length===l?'bg-neutral-900 text-white shadow-lg':'text-neutral-400'}`}>{l}</button>)}</div></div>
-                                            <div className="bg-neutral-900 rounded-3xl p-6 text-white space-y-4 shadow-xl">
-                                                {Object.entries({
-                                                    'シャンプー': dosage[length].s, 
-                                                    '1stエマルジョン': dosage[length].e1, 
-                                                    '2ndローション': dosage[length].l2, 
-                                                    '3rdクリーム': dosage[length].c3, 
-                                                    '4thクリーム': dosage[length].c4, 
-                                                    '5thエマルジョン': dosage[length].e5
-                                                }).map(([k,v], i) => (
-                                                    <div key={i} className="flex justify-between items-center border-b border-white/10 pb-2"><span className="text-[10px] opacity-50 uppercase font-bold">{k}</span><span className="font-bold text-yellow-400 text-lg">{v}</span></div>
-                                                ))}
+                                            <div className="flex justify-between items-center px-2">
+                                                <h3 className="font-bold text-sm text-neutral-800 tracking-wider">髪の長さ (S/M/L)</h3>
+                                                <div className="flex bg-neutral-100 p-1 rounded-xl">
+                                                    {['S','M','L'].map(l => (
+                                                        <button key={l} onClick={()=>setLength(l)} className={`w-10 h-10 rounded-lg text-xs font-bold transition-all ${length===l?'bg-neutral-900 text-white shadow-lg':'text-neutral-400'}`}>{l}</button>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-neutral-900 rounded-[2rem] p-5 text-white space-y-4 shadow-xl">
+                                                <div className="flex justify-between items-center border-b border-white/10 pb-2">
+                                                    <span className="text-[10px] opacity-50 uppercase font-bold">シャンプー</span>
+                                                    <span className="font-bold text-yellow-400 text-md">{dosage[length].s}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center border-b border-white/10 pb-2">
+                                                    <span className="text-[10px] opacity-50 uppercase font-bold">1st エマルジョン</span>
+                                                    <span className="font-bold text-yellow-400 text-md">{dosage[length].e1}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center border-b border-white/10 pb-2">
+                                                    <span className="text-[10px] opacity-50 uppercase font-bold">2nd ローション</span>
+                                                    <span className="font-bold text-yellow-400 text-md">{dosage[length].l2}</span>
+                                                </div>
+                                                
+                                                {/* 3rd Cream Section */}
+                                                <div className="border-b border-white/10 pb-2">
+                                                    <div className="text-[10px] opacity-50 uppercase font-bold mb-1 text-left">3rd クリーム</div>
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-[9px] bg-white/10 px-2 py-0.5 rounded">ベーシック</span>
+                                                        <span className="font-bold text-yellow-400 text-md">{dosage[length].c3.b}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center mt-1">
+                                                        <span className="text-[9px] bg-red-500/20 text-red-200 px-2 py-0.5 rounded">ハイダメージ</span>
+                                                        <span className="font-bold text-yellow-400 text-md">{dosage[length].c3.h}</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* 4th Cream Section */}
+                                                <div className="border-b border-white/10 pb-2">
+                                                    <div className="text-[10px] opacity-50 uppercase font-bold mb-1 text-left">4th クリーム</div>
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-[9px] bg-white/10 px-2 py-0.5 rounded">ベーシック</span>
+                                                        <span className="font-bold text-yellow-400 text-md">{dosage[length].c4.b}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center mt-1">
+                                                        <span className="text-[9px] bg-red-500/20 text-red-200 px-2 py-0.5 rounded">ハイダメージ</span>
+                                                        <span className="font-bold text-yellow-400 text-md">{dosage[length].c4.h}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex justify-between items-center border-b border-white/10 pb-2">
+                                                    <span className="text-[10px] opacity-50 uppercase font-bold">5th エマルジョン</span>
+                                                    <span className="font-bold text-yellow-400 text-md">{dosage[length].e5}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center pb-2">
+                                                    <span className="text-[10px] opacity-50 uppercase font-bold">プロテクションオイル</span>
+                                                    <span className="font-bold text-yellow-400 text-md">{dosage[length].oil}</span>
+                                                </div>
                                             </div>
                                             <p className="text-[10px] text-neutral-400 text-center leading-relaxed italic">※目安量です。髪の状態に合わせて調整してください。</p>
                                         </div>
@@ -268,5 +338,4 @@
         root.render(<App />);
     </script>
 </body>
-
 </html>
